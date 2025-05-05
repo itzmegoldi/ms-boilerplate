@@ -1,0 +1,10 @@
+"""
+This module as a list of all tracecodes listed down as constants
+These tracecodes will be used for logging events
+"""
+
+WORKER_REQUEST_INITIATED = "WORKER_REQUEST_INITIATED"
+WORKER_REQUEST_COMPLETED = "WORKER_REQUEST_COMPLETED"
+WORKER_REQUEST_FAILED = "WORKER_REQUEST_FAILED"
+WORKER_INVALID_REQUEST = "WORKER_INVALID_REQUEST"
+ 

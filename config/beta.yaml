@@ -1,0 +1,11 @@
+---
+server:
+  host: localhost
+  port: 3030
+database:
+  type: postgres
+  username: $env["DB_USERNAME"]
+  password: $env["DB_PASSWORD"]
+  database: boilerplate_local
+  url: localhost
+  port: "5432"

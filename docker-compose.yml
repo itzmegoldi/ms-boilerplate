@@ -1,0 +1,79 @@
+services:
+  db:
+    image: postgres:latest
+    volumes:
+      - /tmp/docker_data/data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: boilerplatedb
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    networks:
+      - ls
+  api:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.api
+      args:
+        DEV: true
+    ports:
+      - "8000:8000"
+    env_file: ./.env
+    environment:
+      - DB_URL=db
+      - RUN_MIGRATION=
+    restart: "no"
+    dns:
+      # Set the DNS server to be the LocalStack container
+      - 10.0.2.20
+    networks:
+      - ls
+    depends_on:
+      - db
+  worker:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.worker
+      args:
+        DEV: true
+    restart: "no"
+    env_file: ./.env
+    environment:
+      - DB_URL=db
+    dns:
+      # Set the DNS server to be the LocalStack container
+      - 10.0.2.20
+    networks:
+      - ls
+    depends_on:
+      localstack:
+        condition: service_healthy
+      db:
+        condition: service_started
+  localstack:
+    image: localstack/localstack
+    container_name: localstack
+    healthcheck:
+      test: awslocal sqs list-queues
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    ports:
+      - "127.0.0.1:4566:4566"
+      - "127.0.0.1:4510-4559:4510-4559"
+    volumes:
+      - "./build/aws-init.dev.sh:/etc/localstack/init/ready.d/init-aws.sh"
+      - "/tmp/docker_data/localstack:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      ls:
+        # Set the container IP address in the 10.0.2.0/24 subnet
+        ipv4_address: 10.0.2.20
+
+networks:
+  ls:
+    ipam:
+      config:
+        # Specify the subnet range for IP address allocation
+        - subnet: 10.0.2.0/24

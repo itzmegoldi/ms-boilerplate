@@ -1,0 +1,23 @@
+---
+server:
+  host: localhost
+  port: 3030
+  auth:
+    - client_name: api
+      client_key: test
+database:
+  type: postgres
+  username: $env["DB_USERNAME"]
+  password: $env["DB_PASSWORD"]
+  database: boilerplate_local
+  url: localhost
+  port: "5432"
+aws:
+  access_key: random
+  aws_secret: random
+  s3:
+    endpoint_url: http://localhost.localstack.cloud:4566
+  sqs:
+    region: us-east-1
+    queue_url: http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/test-queue
+    endpoint: http://localhost.localstack.cloud:4566

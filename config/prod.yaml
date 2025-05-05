@@ -1,0 +1,23 @@
+---
+server:
+  host: localhost
+  port: 3030
+  auth:
+    - client_name: api
+      client_key: $env["API_CLIENT_KEY"]
+database:
+  type: postgres
+  username: $env["DB_USERNAME"]
+  password: $env["DB_PASSWORD"]
+  database: boilerplate_local
+  url: localhost
+  port: "5432"
+aws:
+  access_key: null
+  aws_secret: null
+  s3:
+    endpoint_url: null
+  sqs:
+    region: us-east-1
+    queue_url: https://sqs.us-east-1.amazonaws.com/
+    endpoint: null

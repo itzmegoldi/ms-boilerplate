@@ -1,0 +1,58 @@
+#==== STAGE: BASE STAGE ====#
+FROM python:3.11-slim AS base
+
+ARG DEV=false
+ENV VIRTUAL_ENV=/app/.venv \
+    PATH="/app/.venv/bin:$PATH" \
+    MICRO_SERVICE="/app"
+
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y curl gcc git libc6-dev libpq-dev \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+RUN mkdir -p ${MICRO_SERVICE}
+
+#==== STAGE: BUILD STAGE ====#
+FROM base AS builder
+
+ENV POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_IN_PROJECT=1 \
+    POETRY_VIRTUALENVS_CREATE=1 \
+    POETRY_CACHE_DIR=/tmp/poetry_cache
+
+# set work directory
+WORKDIR ${MICRO_SERVICE}
+
+COPY pyproject.toml poetry.lock ./
+RUN pip3 install --upgrade --no-cache-dir pip
+RUN pip install --no-cache-dir poetry==2.1.1
+
+RUN if [ "$DEV" = "true" ]; then \
+      poetry install --with dev --no-root && rm -rf "$POETRY_CACHE_DIR"; \
+    else \
+      poetry install --without dev --no-root && rm -rf "$POETRY_CACHE_DIR"; \
+    fi
+
+
+#==== STAGE: FINAL IMAGE ====#
+FROM base AS runtime
+
+COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+WORKDIR ${MICRO_SERVICE}
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+COPY . ${MICRO_SERVICE}
+RUN set -e && \
+    FILE_URL="https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem" && \
+    mkdir -p "certs" && \
+    curl -o "certs/db.pem" "$FILE_URL" && \
+    echo "Db Cert File downloaded and copied to certs/db.pem"
+
+COPY ./build/start.api.sh ./start.api.sh
+RUN chmod +x ./start.api.sh
+
+EXPOSE 8000
+ENTRYPOINT [ "./start.api.sh" ]
